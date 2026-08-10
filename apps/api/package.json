@@ -1,0 +1,1 @@
+{"name":"@airs/api","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node src/index.js","build":"echo api-ready"},"dependencies":{"@prisma/client":"^6.13.0","express":"^5.1.0","helmet":"^8.1.0","cors":"^2.8.5","@airs/airs-engine":"0.1.0","@airs/report-generator":"0.1.0"}}

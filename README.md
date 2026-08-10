@@ -1,7 +1,20 @@
-# AIRS Platform
+# AIRS Platform v0.1 scaffold
 
-Production-oriented AIRS pilot platform.
+Target Railway services:
+- web
+- api
+- worker
+- managed PostgreSQL
 
-Architecture: web + API + worker + PostgreSQL, with separated PUBLIC / RESPONDENT / CLIENT / AIRS_OPERATOR access and review-gated report delivery.
+Access model:
+- PUBLIC -> / and /visibility
+- RESPONDENT -> /respond/:token
+- CLIENT -> /portal/*
+- AIRS_OPERATOR -> /airs-admin/*
 
-Figma remains the UI source of truth.
+Report policy:
+- generated report enters READY_FOR_REVIEW
+- AIRS operator approves explicitly
+- client delivery occurs only after approval
+
+Figma remains the UI source of truth. This scaffold establishes backend boundaries and Railway service structure.

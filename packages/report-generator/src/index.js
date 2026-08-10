@@ -1,0 +1,1 @@
+export function buildReportDraft({engagement,reconciliation}){return {title:"AIRS Management Report",status:"DRAFT",engagementId:engagement.id,generatedAt:new Date().toISOString(),reconciliation,guardrails:["Not a legal audit or compliance certificate.","No employee risk/compliance scoring.","Requires AIRS review before delivery."]}}
