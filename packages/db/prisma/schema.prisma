@@ -7,81 +7,116 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role { CLIENT AIRS_OPERATOR }
-enum EngagementState { CREATED MANAGEMENT_COMPLETE TEAM_COLLECTION_OPEN TEAM_COLLECTION_COMPLETE PRIVACY_TRANSFORMED RECONCILIATION_READY REVIEW_REQUIRED REPORT_DRAFT AIRS_APPROVED DELIVERED }
-enum ResponseSource { MANAGEMENT_DECLARED TEAM_SELF_REPORTED DOCUMENTARY TECHNICAL }
-enum ReportStatus { DRAFT READY_FOR_REVIEW APPROVED DELIVERED REJECTED }
+enum Role {
+  CLIENT
+  AIRS_OPERATOR
+}
+
+enum EngagementState {
+  CREATED
+  MANAGEMENT_COMPLETE
+  TEAM_COLLECTION_OPEN
+  TEAM_COLLECTION_COMPLETE
+  PRIVACY_TRANSFORMED
+  RECONCILIATION_READY
+  REVIEW_REQUIRED
+  REPORT_DRAFT
+  AIRS_APPROVED
+  DELIVERED
+}
+
+enum ResponseSource {
+  MANAGEMENT_DECLARED
+  TEAM_SELF_REPORTED
+  DOCUMENTARY
+  TECHNICAL
+}
+
+enum ReportStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  APPROVED
+  DELIVERED
+  REJECTED
+}
 
 model Organisation {
-  id String @id @default(cuid())
-  name String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   engagements Engagement[]
-  users User[]
+  users       User[]
 }
+
 model User {
-  id String @id @default(cuid())
-  email String @unique
-  role Role
+  id             String        @id @default(cuid())
+  email          String        @unique
+  role           Role
   organisationId String?
-  organisation Organisation? @relation(fields:[organisationId], references:[id])
-  createdAt DateTime @default(now())
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  createdAt      DateTime      @default(now())
 }
+
 model Engagement {
-  id String @id @default(cuid())
-  organisationId String
-  organisation Organisation @relation(fields:[organisationId], references:[id])
-  state EngagementState @default(CREATED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  responses Response[]
+  id               String            @id @default(cuid())
+  organisationId   String
+  organisation     Organisation      @relation(fields: [organisationId], references: [id])
+  state            EngagementState   @default(CREATED)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  responses        Response[]
   respondentTokens RespondentToken[]
-  evidence EvidenceSignal[]
-  reports Report[]
+  evidence         EvidenceSignal[]
+  reports          Report[]
 }
+
 model RespondentToken {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   engagementId String
-  engagement Engagement @relation(fields:[engagementId], references:[id])
-  tokenHash String @unique
-  expiresAt DateTime
-  usedAt DateTime?
-  revokedAt DateTime?
-  createdAt DateTime @default(now())
+  engagement   Engagement @relation(fields: [engagementId], references: [id])
+  tokenHash    String     @unique
+  expiresAt    DateTime
+  usedAt       DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime   @default(now())
 }
+
 model Response {
-  id String @id @default(cuid())
+  id           String         @id @default(cuid())
   engagementId String
-  engagement Engagement @relation(fields:[engagementId], references:[id])
-  source ResponseSource
-  questionId String
-  answerJson Json
-  rawFreeText String?
-  createdAt DateTime @default(now())
+  engagement   Engagement     @relation(fields: [engagementId], references: [id])
+  source       ResponseSource
+  questionId   String
+  answerJson   Json
+  rawFreeText  String?
+  createdAt    DateTime       @default(now())
+
   @@index([engagementId, source])
 }
+
 model EvidenceSignal {
-  id String @id @default(cuid())
+  id           String         @id @default(cuid())
   engagementId String
-  engagement Engagement @relation(fields:[engagementId], references:[id])
-  source ResponseSource
-  signalType String
-  payload Json
-  provenance Json
-  confidence Float?
-  createdAt DateTime @default(now())
+  engagement   Engagement     @relation(fields: [engagementId], references: [id])
+  source       ResponseSource
+  signalType   String
+  payload      Json
+  provenance   Json
+  confidence   Float?
+  createdAt    DateTime       @default(now())
 }
+
 model Report {
-  id String @id @default(cuid())
-  engagementId String
-  engagement Engagement @relation(fields:[engagementId], references:[id])
-  status ReportStatus @default(DRAFT)
+  id             String       @id @default(cuid())
+  engagementId   String
+  engagement     Engagement   @relation(fields: [engagementId], references: [id])
+  status         ReportStatus @default(DRAFT)
   structuredJson Json
-  pdfObjectKey String?
-  approvedBy String?
-  approvedAt DateTime?
-  deliveredAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  pdfObjectKey   String?
+  approvedBy     String?
+  approvedAt     DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
