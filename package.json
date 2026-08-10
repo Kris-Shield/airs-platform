@@ -1,1 +1,1 @@
-{"name":"airs-platform","private":true,"version":"0.1.0","workspaces":["apps/*","packages/*"],"scripts":{"build":"npm run build -ws --if-present","db:generate":"npm --workspace @airs/db run generate","db:migrate":"npm --workspace @airs/db run migrate"},"engines":{"node":">=20"}}
+{"name":"airs-platform","private":true,"version":"0.1.1","workspaces":["apps/*","packages/*"],"scripts":{"build":"npm run build -ws --if-present","db:generate":"npm --workspace @airs/db run generate","db:migrate":"npm --workspace @airs/db run migrate"},"engines":{"node":">=20"}}
