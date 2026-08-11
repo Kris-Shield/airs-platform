@@ -75,8 +75,9 @@ model RespondentToken {
   id           String     @id @default(cuid())
   engagementId String
   engagement   Engagement @relation(fields: [engagementId], references: [id])
-  tokenHash    String     @unique
-  expiresAt    DateTime
+  tokenHash      String         @unique
+  responseSource ResponseSource @default(TEAM_SELF_REPORTED)
+  expiresAt      DateTime
   usedAt       DateTime?
   revokedAt    DateTime?
   createdAt    DateTime   @default(now())
