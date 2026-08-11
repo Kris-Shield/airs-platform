@@ -44,7 +44,10 @@ app.get(
     if (!token || token.revokedAt || token.expiresAt < new Date()) {
       return res.sendStatus(403);
     }
-    res.json({ canSubmit: !token.usedAt });
+    res.json({
+      canSubmit: !token.usedAt,
+      module: token.responseSource === "MANAGEMENT_DECLARED" ? "management" : "team",
+    });
   }),
 );
 
@@ -66,7 +69,7 @@ app.post(
         await tx.response.create({
           data: {
             engagementId: token.engagementId,
-            source: "TEAM_SELF_REPORTED",
+            source: token.responseSource,
             questionId: String(answer.questionId),
             answerJson: answer.answer ?? null,
             rawFreeText: answer.rawFreeText ?? null,
@@ -138,6 +141,38 @@ app.post(
     });
 
     res.json({ reportId: report.id, status: report.status });
+  }),
+);
+
+app.post(
+  "/api/admin/engagements/:id/tokens",
+  requireOperator,
+  asyncRoute(async (req, res) => {
+    const source = req.body?.source;
+    if (!["MANAGEMENT_DECLARED", "TEAM_SELF_REPORTED"].includes(source)) {
+      return res.status(400).json({ error: "invalid_response_source" });
+    }
+    const engagement = await db.engagement.findUnique({ where: { id: req.params.id } });
+    if (!engagement) return res.sendStatus(404);
+
+    const rawToken = crypto.randomBytes(32).toString("base64url");
+    const requestedHours = Number(req.body?.expiresInHours || 72);
+    const expiresInHours = Math.min(Math.max(requestedHours, 1), 720);
+    const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
+    await db.respondentToken.create({
+      data: {
+        engagementId: engagement.id,
+        tokenHash: hash(rawToken),
+        responseSource: source,
+        expiresAt,
+      },
+    });
+
+    res.status(201).json({
+      token: rawToken,
+      module: source === "MANAGEMENT_DECLARED" ? "management" : "team",
+      expiresAt: expiresAt.toISOString(),
+    });
   }),
 );
 
