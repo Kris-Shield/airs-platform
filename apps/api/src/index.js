@@ -192,6 +192,26 @@ app.post(
   }),
 );
 
+app.get(
+  "/api/admin/reports/:id",
+  requireOperator,
+  asyncRoute(async (req, res) => {
+    const report = await db.report.findUnique({
+      where: { id: req.params.id },
+      include: { engagement: { select: { state: true } } },
+    });
+    if (!report) return res.sendStatus(404);
+    res.json({
+      id: report.id,
+      status: report.status,
+      engagementState: report.engagement.state,
+      approvedBy: report.approvedBy,
+      approvedAt: report.approvedAt,
+      deliveredAt: report.deliveredAt,
+    });
+  }),
+);
+
 app.post(
   "/api/admin/reports/:id/approve",
   requireOperator,
