@@ -9,6 +9,7 @@ import { buildReportDraft } from "@airs/report-generator";
 const db = new PrismaClient();
 const app = express();
 const port = Number(process.env.PORT || 4000);
+const publicIntakeAttempts = new Map();
 
 app.use(helmet());
 app.use(cors());
@@ -34,6 +35,88 @@ function requireOperator(req, res, next) {
 }
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "airs-api" }));
+
+app.post(
+  "/api/public/visibility-assessments",
+  asyncRoute(async (req, res) => {
+    const ip = req.ip || req.socket.remoteAddress || "unknown";
+    const now = Date.now();
+    const recentAttempts = (publicIntakeAttempts.get(ip) || []).filter(
+      (attemptedAt) => now - attemptedAt < 60 * 60 * 1000,
+    );
+    if (recentAttempts.length >= 5) {
+      return res.status(429).json({ error: "rate_limit_exceeded" });
+    }
+    recentAttempts.push(now);
+    publicIntakeAttempts.set(ip, recentAttempts);
+
+    const name = String(req.body?.name || "").trim().slice(0, 120);
+    const email = String(req.body?.email || "").trim().toLowerCase().slice(0, 254);
+    const organisationName = String(req.body?.organisation || "").trim().slice(0, 160);
+    const consent = req.body?.consent === true;
+    const website = String(req.body?.website || "").trim();
+    const answers = Array.isArray(req.body?.answers) ? req.body.answers : [];
+
+    if (website) return res.status(202).json({ accepted: true });
+    if (!name || !organisationName || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ error: "contact_details_invalid" });
+    }
+    if (!consent) return res.status(400).json({ error: "consent_required" });
+    if (answers.length !== 8) {
+      return res.status(400).json({ error: "visibility_answers_required" });
+    }
+
+    const submittedAnswers = answers.map((answer) => ({
+      questionId: String(answer?.questionId || "").slice(0, 80),
+      answer: answer?.answer ?? null,
+    }));
+    if (submittedAnswers.some((answer) => !answer.questionId)) {
+      return res.status(400).json({ error: "visibility_answers_invalid" });
+    }
+
+    const created = await db.$transaction(async (tx) => {
+      const organisation = await tx.organisation.create({
+        data: { name: organisationName },
+      });
+      const engagement = await tx.engagement.create({
+        data: { organisationId: organisation.id, state: "CREATED" },
+      });
+      await tx.response.createMany({
+        data: [
+          {
+            engagementId: engagement.id,
+            source: "TECHNICAL",
+            questionId: "PUBLIC_SELF_ASSESSMENT:CONTACT",
+            answerJson: {
+              assessmentType: "PUBLIC_SELF_ASSESSMENT",
+              name,
+              email,
+              organisation: organisationName,
+              consentedAt: new Date().toISOString(),
+            },
+          },
+          ...submittedAnswers.map((answer) => ({
+            engagementId: engagement.id,
+            source: "TECHNICAL",
+            questionId: `PUBLIC_SELF_ASSESSMENT:${answer.questionId}`,
+            answerJson: {
+              assessmentType: "PUBLIC_SELF_ASSESSMENT",
+              answer: answer.answer,
+            },
+          })),
+        ],
+      });
+      return engagement;
+    });
+
+    res.status(201).json({
+      accepted: true,
+      engagementId: created.id,
+      state: created.state,
+      nextStep: "AIRS_OPERATOR_REVIEW",
+    });
+  }),
+);
 
 app.get(
   "/api/respond/:token",
