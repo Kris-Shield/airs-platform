@@ -6,7 +6,7 @@ import {PrismaClient} from "@prisma/client";
 import {privacyTransform,reconcile} from "@airs/airs-engine";
 import {buildReportDraft} from "@airs/report-generator";
 
-// Railway rebuild marker: latest Prisma schema must be included in this snapshot.
+// Railway rebuild marker: deploy current main including DB push script.
 const db=new PrismaClient(), app=express(), port=Number(process.env.PORT||4000);
 app.use(helmet()); app.use(cors()); app.use(express.json({limit:"512kb"}));
 app.get("/health",(_q,r)=>r.json({ok:true,service:"airs-api"}));
